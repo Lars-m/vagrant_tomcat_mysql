@@ -7,10 +7,14 @@ export DEBIAN_FRONTEND="noninteractive";
 #### IMPORTANT!!!! If you run this script on a public server, change ALL usernames and passwords #####
 ######################################################################################################
 
+#User and Password for the dev-user
 DB_PW="ax2"
 DB_USER_NAME="dev"
 
+# Password for the hardcoded user: gui_user
 MANAGER_GUI_PW="a1234"
+
+#Password for the hardcoded user:  script_user
 MANAGER_SCRIPT_PW="a1234"
 
 
@@ -99,6 +103,7 @@ sudo chmod -R g+r conf
 sudo chmod g+x conf
 sudo chown -R tomcat webapps/ work/ temp/ logs/
 
+
 echo "##############################################################################"
 echo "###########             Setup Tomcat-users.xml                ################"
 echo "###########   Change passwords if used on a public server ####################"
@@ -156,6 +161,10 @@ echo "##########################################################################
 sudo cat <<- EOF_SETENV > /opt/tomcat/bin/setenv.sh
 # export JPDA_OPTS="-agentlib:jdwp=transport=dt_socket, address=9999, server=y, suspend=n"
 export CATALINA_OPTS="-agentlib:jdwp=transport=dt_socket,address=9999,server=y,suspend=n"
+
+###########################################################################
+############ Add your own Environment Variables Below #####################
+###########################################################################
 EOF_SETENV
 
 
@@ -197,46 +206,7 @@ sudo systemctl daemon-reload
 sudo systemctl start tomcat
 sudo systemctl enable tomcat
 
-cd ~/
-
-echo "############ Installing nginx  ############"
-sudo apt-get install -y nginx
-
-#allow for updates of large WAR-files
-str='client_max_body_size 50M;'
-#Remove line first if script has already been executed once
-sudo sed -i "/$str/d" /etc/nginx/nginx.conf
-
-sudo sed -i "/http {/ a\       $str" /etc/nginx/nginx.conf;
-
-
-sudo rm /etc/nginx/sites-enabled/default
-
-sudo cat <<- EOF_NGINX > /etc/nginx/sites-enabled/default
-upstream tomcat {
-    server 127.0.0.1:8080 fail_timeout=0;
-}
-
-server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
-        root /var/www/html;
-        index index.html index.htm
-
-        server_name _;
-
-        location / {
-                # First attempt to serve request as file, then
-                # as directory, then fall back to displaying a 404.
-                #try_files $uri $uri/ =404;
-                #The line above is commented out to let Tomcat handle 404 scenarios. Put it back if you don't use Tomcat
-
-                include proxy_params;
-                proxy_pass http://tomcat/;
-        }
-
-}
-EOF_NGINX
+### You could insert the NGINX Script here
 
 sudo systemctl restart nginx
 
@@ -248,9 +218,9 @@ echo ####### Allow Port 80              ####
 sudo ufw allow OpenSSH
 sudo ufw allow http
 sudo ufw allow mysql
-sudo ufw --force enable
+# sudo ufw --force enable
 
 echo # If you want to play arund with Tomcat without Nginx add this rule:
-echo # sudo ufw allow 8080
+echo # sudo ufw allow 8085
 
 echo "Provisioning Complete"
